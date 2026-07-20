@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Estoque · Sushi</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+  :root{
+    --bg: #fafaf9;
+    --card: #ffffff;
+    --line: #eceae6;
+    --ink: #1c1c1a;
+    --ink-soft: #6b6b66;
+    --ink-faint: #a3a39c;
+    --accent: #d6553a;
+    --accent-soft: #fbeae6;
+    --good: #4f8a63;
+    --good-soft: #ecf5ef;
+    --zero: #c94b3f;
+    --zero-soft: #fceeec;
+  }
+
+  *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  button, input{ font-family: inherit; }
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+
+  .wrap{ max-width: 560px; margin: 0 auto; padding: 0 20px 80px; }
+
+  /* Header */
+  header{
+    position: sticky; top: 0; z-index: 20;
+    background: rgba(250,250,249,0.92);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+  }
+  .header-inner{ max-width: 560px; margin: 0 auto; padding: 22px 20px 0; }
+  .title-row{ display:flex; align-items:flex-start; justify-content:space-between; }
+  h1{ font-size: 19px; font-weight: 800; letter-spacing: -0.01em; margin: 0; }
+  .subtitle{ font-size: 12.5px; color: var(--ink-soft); margin-top: 3px; }
+  .refresh-btn{
+    display:flex; align-items:center; gap:6px;
+    background: transparent; border: 1px solid var(--line); color: var(--ink-soft);
+    border-radius: 8px; padding: 7px 11px; font-size: 12px; font-weight: 600;
+    cursor: pointer; flex-shrink:0;
+  }
+  .refresh-btn:hover{ border-color: #d8d6d1; }
+  .refresh-btn svg{ width:13px; height:13px; }
+  .spin{ animation: spin 0.85s linear infinite; }
+  @keyframes spin{ to{ transform: rotate(360deg); } }
+
+  .tabs{ display:flex; gap:2px; margin-top: 18px; }
+  .tab{
+    flex:1; text-align:center; padding: 11px 0; background:none; border:none; cursor:pointer;
+    font-size: 13.5px; font-weight: 700; color: var(--ink-faint);
+    border-bottom: 2px solid transparent;
+  }
+  .tab.active{ color: var(--ink); border-bottom-color: var(--accent); }
+
+  .updated{
+    display:flex; align-items:center; gap:5px;
+    font-size: 11px; color: var(--ink-faint); margin: 16px 0 14px;
+  }
+  .updated svg{ width:11px; height:11px; }
+
+  /* Summary pills */
+  .pills{ display:flex; gap:8px; margin-bottom: 18px; }
+  .pill{
+    flex:1; background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    padding: 13px 12px; min-width:0;
+  }
+  .pill-label{ font-size: 11px; color: var(--ink-soft); font-weight: 600; margin-bottom:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .pill-value{ font-size: 21px; font-weight: 800; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+  .pill-value.accent{ color: var(--accent); }
+  .pill-value.good{ color: var(--good); }
+  .pill-value.zero{ color: var(--zero); }
+
+  /* Search */
+  .search-row{ display:flex; gap:8px; margin-bottom: 14px; }
+  .search-box{ position:relative; flex:1; }
+  .search-box svg{ position:absolute; left:12px; top:50%; transform:translateY(-50%); width:14px; height:14px; color: var(--ink-faint); }
+  .search-box input{
+    width:100%; border: 1px solid var(--line); background: var(--card); border-radius: 10px;
+    padding: 10px 12px 10px 34px; font-size: 13.5px; color: var(--ink);
+  }
+  .search-box input:focus{ outline: 2px solid var(--accent); outline-offset: -1px; border-color: transparent; }
+  .search-box .clear-btn{ position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--ink-faint); cursor:pointer; padding:4px; }
+  .filter-btn{
+    padding: 0 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--card);
+    color: var(--ink-soft); font-size: 12.5px; font-weight: 600; cursor:pointer; white-space:nowrap;
+  }
+  .filter-btn.active{ border-color: var(--zero); background: var(--zero-soft); color: var(--zero); }
+
+  /* Category cards */
+  .cat{ background: var(--card); border: 1px solid var(--line); border-radius: 14px; margin-bottom: 10px; overflow:hidden; }
+  .cat-head{
+    width:100%; display:flex; align-items:center; justify-content:space-between;
+    padding: 14px 16px; background:none; border:none; cursor:pointer; text-align:left; color: var(--ink);
+  }
+  .cat-head-left{ display:flex; align-items:center; gap:8px; min-width:0; }
+  .cat-head-left svg{ width:14px; height:14px; color: var(--ink-faint); flex-shrink:0; transition: transform 0.15s; }
+  .cat-name{ font-weight: 700; font-size: 13px; letter-spacing: -0.005em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .cat-head-right{ display:flex; align-items:center; gap:8px; flex-shrink:0; }
+  .cat-count{ font-size: 11px; color: var(--ink-faint); }
+  .cat-zero-badge{ font-size:10.5px; font-weight:700; color: var(--zero); background: var(--zero-soft); border-radius:5px; padding:2px 6px; }
+
+  .item-row{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 11px 16px; border-top: 1px solid var(--line);
+  }
+  .item-name{ font-size: 13px; color: #3a3a37; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding-right:10px; }
+  .item-note{ font-size: 10px; color: var(--ink-faint); margin-top:2px; }
+  .item-value{ font-weight: 700; font-size: 14px; white-space:nowrap; font-variant-numeric: tabular-nums; flex-shrink:0; }
+  .item-value.zero{ color: var(--zero); }
+  .item-value.ok{ color: var(--ink); }
+  .item-unit{ font-size: 10.5px; color: var(--ink-faint); font-weight:500; margin-left:2px; }
+
+  /* Day chips */
+  .day-scroll{ display:flex; gap:6px; overflow-x:auto; padding-bottom:6px; margin-bottom:16px; }
+  .day-scroll::-webkit-scrollbar{ display:none; }
+  .day-chip{
+    flex-shrink:0; padding: 9px 14px; border-radius: 10px; border: 1px solid var(--line);
+    background: var(--card); color: var(--ink-soft); font-size: 12.5px; font-weight: 700; cursor:pointer; white-space:nowrap;
+  }
+  .day-chip.active{ border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+
+  .mov-row{ display:flex; align-items:center; gap:10px; padding: 11px 16px; border-top: 1px solid var(--line); }
+  .mov-row svg{ width:15px; height:15px; flex-shrink:0; }
+  .mov-icon-in{ color: var(--good); }
+  .mov-icon-out{ color: var(--accent); }
+  .mov-meta{ font-size: 10.5px; color: var(--ink-faint); margin-top: 1px; }
+  .mov-qty{ font-weight:700; font-size:13.5px; white-space:nowrap; font-variant-numeric: tabular-nums; flex-shrink:0; }
+  .mov-qty.in{ color: var(--good); }
+  .mov-qty.out{ color: var(--accent); }
+
+  .empty-state{ text-align:center; padding: 50px 20px; color: var(--ink-faint); font-size:13px; }
+  .empty-state svg{ width:26px; height:26px; margin-bottom:10px; opacity:0.5; }
+
+  .error-box{
+    background: var(--zero-soft); border: 1px solid #f0c9c3; border-radius: 12px; padding: 16px; margin-bottom:16px;
+  }
+  .error-title{ font-weight:700; font-size:13px; color: var(--zero); }
+  .error-msg{ font-size: 12.5px; color: #8a5850; margin-top:5px; line-height:1.5; }
+  .error-retry{
+    margin-top: 10px; background: #fff; border: 1px solid var(--zero); color: var(--zero);
+    border-radius: 8px; padding: 7px 13px; font-size: 12px; font-weight:700; cursor:pointer;
+  }
+
+  .loading-state{ text-align:center; padding: 70px 20px; color: var(--ink-faint); }
+  .loading-state svg{ width:22px; height:22px; }
+  .loading-state div{ margin-top: 12px; font-size:13px; }
+
+  [tabindex]:focus-visible, button:focus-visible{ outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="title-row">
+      <div>
+        <h1>Estoque</h1>
+        <div class="subtitle">Contagem diária · Sushi</div>
+      </div>
+      <button class="refresh-btn" id="refreshBtn" aria-label="Atualizar dados">
+        <svg id="refreshIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+        <span id="refreshLabel">Atualizar</span>
+      </button>
+    </div>
+    <div class="tabs">
+      <button class="tab active" id="tabSaldo">Saldo agora</button>
+      <button class="tab" id="tabMov">Movimentação</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div id="content"></div>
+</div>
+
+<script>
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS-e4dPxjKvzjZbI5d1LvzNi0OVf9lZBP4ucWpt5gKp-3kFW5Ho9xv25eLVyZKK1si72kbDYFfYGCog/pub?output=csv";
+
+const ICON_SEARCH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>';
+const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+const ICON_CHEVRON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>';
+const ICON_CHEVRON_RIGHT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>';
+const ICON_IN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12l4 4 4-4"/></svg>';
+const ICON_OUT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16V8M8 12l4-4 4 4"/></svg>';
+const ICON_ALERT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4M12 17h.01"/></svg>';
+const ICON_CLOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>';
+const ICON_BOX = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/></svg>';
+
+// ---------- state ----------
+let state = {
+  rows: null,
+  loading: true,
+  error: null,
+  lastFetch: null,
+  tab: 'saldo',
+  search: '',
+  lowOnly: false,
+  expandedCats: {},
+  selectedDay: null,
+};
+
+// ---------- CSV parsing ----------
+function parseCSV(text){
+  const rows = [];
+  let row = [], field = '', inQuotes = false;
+  for (let i = 0; i < text.length; i++){
+    const c = text[i];
+    if (inQuotes){
+      if (c === '"'){
+        if (text[i+1] === '"'){ field += '"'; i++; } else { inQuotes = false; }
+      } else field += c;
+    } else {
+      if (c === '"') inQuotes = true;
+      else if (c === ','){ row.push(field); field=''; }
+      else if (c === '\n'){ row.push(field); rows.push(row); row=[]; field=''; }
+      else if (c === '\r'){ /* skip */ }
+      else field += c;
+    }
+  }
+  if (field.length>0 || row.length>0){ row.push(field); rows.push(row); }
+  return rows.filter(r => r.length>1 || (r[0] && r[0].trim() !== ''));
+}
+
+function parseNumber(s){
+  if (s === undefined || s === null) return 0;
+  const cleaned = String(s).trim().replace(',', '.');
+  const n = parseFloat(cleaned);
+  return isNaN(n) ? 0 : n;
+}
+
+function parseDateFlexible(s){
+  if (!s) return null;
+  const str = String(s).trim();
+  let m = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return new Date(+m[1], +m[2]-1, +m[3]);
+  m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m) return new Date(+m[3], +m[2]-1, +m[1]);
+  const d = new Date(str);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function dateKey(d){
+  if (!d) return '—';
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+function formatDateBR(d){
+  if (!d) return '—';
+  return d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric' });
+}
+
+function formatQty(n){
+  const rounded = Math.round(n*1000)/1000;
+  if (Math.abs(rounded - Math.round(rounded)) < 0.001) return String(Math.round(rounded));
+  return rounded.toLocaleString('pt-BR', { minimumFractionDigits:1, maximumFractionDigits:3 });
+}
+
+function guessUnit(name){
+  const n = name.toLowerCase();
+  if (n.includes('kilo') || n.includes(' kg')) return 'kg';
+  if (n.includes('unidade') || n.includes(' und') || n.includes(' unid')) return 'un';
+  return '';
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+// ---------- data loading ----------
+async function loadData(){
+  state.loading = true; state.error = null;
+  render();
+  try{
+    const res = await fetch(CSV_URL + '&cachebust=' + Date.now());
+    if (!res.ok) throw new Error('Falha ao buscar a planilha (HTTP ' + res.status + ')');
+    const text = await res.text();
+    const rows = parseCSV(text);
+    if (rows.length < 2) throw new Error('Planilha vazia ou em formato inesperado');
+    const header = rows[0].map(h => h.trim().toLowerCase());
+    const idx = {
+      timestamp: header.findIndex(h => h.includes('timestamp')),
+      responsavel: header.findIndex(h => h.includes('respons')),
+      data: header.findIndex(h => h === 'data'),
+      tipo: header.findIndex(h => h.includes('tipo')),
+      categoria: header.findIndex(h => h.includes('categoria')),
+      produto: header.findIndex(h => h.includes('produto')),
+      quantidade: header.findIndex(h => h.includes('quant')),
+    };
+    const missing = Object.entries(idx).filter(([,v]) => v === -1);
+    if (missing.length > 0) throw new Error('Não encontrei as colunas: ' + missing.map(([k])=>k).join(', '));
+
+    const parsed = rows.slice(1).map(r => ({
+      timestamp: parseDateFlexible(r[idx.timestamp]),
+      responsavel: (r[idx.responsavel]||'').trim(),
+      data: parseDateFlexible(r[idx.data]),
+      tipo: (r[idx.tipo]||'').trim().toUpperCase(),
+      categoria: (r[idx.categoria]||'').trim(),
+      produto: (r[idx.produto]||'').trim(),
+      quantidade: parseNumber(r[idx.quantidade]),
+    })).filter(r => r.produto && r.tipo && r.data);
+
+    state.rows = parsed;
+    state.lastFetch = new Date();
+  }catch(e){
+    state.error = e.message || 'Erro desconhecido ao carregar dados';
+  }finally{
+    state.loading = false;
+    render();
+  }
+}
+
+// ---------- computations ----------
+function computeAll(rows){
+  const sorted = [...rows].sort((a,b) => {
+    const ta = (a.timestamp || a.data).getTime();
+    const tb = (b.timestamp || b.data).getTime();
+    return ta - tb;
+  });
+
+  const productMeta = {};
+  const lastSaldo = {};
+  const deltasAfterSaldo = {};
+
+  for (const r of sorted){
+    productMeta[r.produto] = { categoria: r.categoria };
+    if (r.tipo === 'SALDO INICIAL'){
+      lastSaldo[r.produto] = { valor: r.quantidade };
+      deltasAfterSaldo[r.produto] = 0;
+    } else if (r.tipo === 'ENTRADA'){
+      deltasAfterSaldo[r.produto] = (deltasAfterSaldo[r.produto]||0) + r.quantidade;
+    } else if (r.tipo === 'SAÍDA' || r.tipo === 'SAIDA'){
+      deltasAfterSaldo[r.produto] = (deltasAfterSaldo[r.produto]||0) - r.quantidade;
+    }
+  }
+
+  const balances = Object.keys(productMeta).map(produto => {
+    const saldo = lastSaldo[produto];
+    const delta = deltasAfterSaldo[produto] || 0;
+    const atual = (saldo ? saldo.valor : 0) + delta;
+    return { produto, categoria: productMeta[produto].categoria, atual, unidade: guessUnit(produto), semSaldoBase: !saldo };
+  });
+  balances.sort((a,b) => a.produto.localeCompare(b.produto, 'pt-BR'));
+
+  const catSet = {};
+  balances.forEach(b => { (catSet[b.categoria] = catSet[b.categoria]||[]).push(b); });
+  const categories = Object.keys(catSet).sort((a,b)=>a.localeCompare(b,'pt-BR')).map(cat => ({ nome: cat, itens: catSet[cat] }));
+
+  const movementsByDay = {};
+  for (const r of sorted){
+    if (r.tipo === 'SALDO INICIAL') continue;
+    const key = dateKey(r.data);
+    (movementsByDay[key] = movementsByDay[key]||[]).push(r);
+  }
+  const dayList = Object.keys(movementsByDay).sort((a,b)=> a<b?1:-1);
+
+  const now = new Date();
+  const todayKey = dateKey(now);
+  const todaysRows = movementsByDay[todayKey] || [];
+  let entradas=0, saidas=0;
+  todaysRows.forEach(r => {
+    if (r.tipo==='ENTRADA') entradas += r.quantidade;
+    else if (r.tipo==='SAÍDA'||r.tipo==='SAIDA') saidas += r.quantidade;
+  });
+
+  return { balances, categories, movementsByDay, dayList, todayMovements: { entradas, saidas } };
+}
+
+// ---------- render ----------
+function render(){
+  const content = document.getElementById('content');
+  document.getElementById('tabSaldo').classList.toggle('active', state.tab==='saldo');
+  document.getElementById('tabMov').classList.toggle('active', state.tab==='movimentacao');
+  document.getElementById('refreshIcon').classList.toggle('spin', state.loading);
+  document.getElementById('refreshLabel').textContent = state.loading ? '...' : 'Atualizar';
+
+  if (state.loading && !state.rows){
+    content.innerHTML = `<div class="loading-state">${ICON_CLOCK.replace('currentColor','#a3a39c')}<div>Carregando planilha…</div></div>`;
+    return;
+  }
+
+  if (state.error){
+    content.innerHTML = `
+      <div class="error-box">
+        <div style="display:flex;gap:8px;align-items:flex-start;">
+          <div style="flex-shrink:0;color:#c94b3f;width:16px;">${ICON_ALERT}</div>
+          <div>
+            <div class="error-title">Não consegui carregar a planilha</div>
+            <div class="error-msg">${escapeHtml(state.error)}. Confira se a planilha ainda está publicada em Arquivo → Compartilhar → Publicar na web.</div>
+            <button class="error-retry" onclick="loadData()">Tentar de novo</button>
+          </div>
+        </div>
+      </div>`;
+    return;
+  }
+
+  if (!state.rows) return;
+
+  const computed = computeAll(state.rows);
+
+  let html = '';
+  if (state.lastFetch){
+    html += `<div class="updated">${ICON_CLOCK}Atualizado às ${state.lastFetch.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</div>`;
+  }
+
+  if (state.tab === 'saldo'){
+    html += renderSaldoView(computed);
+  } else {
+    if (!state.selectedDay && computed.dayList.length>0) state.selectedDay = computed.dayList[0];
+    html += renderMovView(computed);
+  }
+
+  content.innerHTML = html;
+  attachSaldoHandlers(computed);
+  attachMovHandlers(computed);
+}
+
+function renderSaldoView(computed){
+  const zeroCount = computed.balances.filter(b => b.atual <= 0).length;
+
+  let cats = computed.categories;
+  if (state.search.trim()){
+    const q = state.search.trim().toLowerCase();
+    cats = cats.map(c => ({...c, itens: c.itens.filter(i => i.produto.toLowerCase().includes(q))})).filter(c => c.itens.length>0);
+  }
+  if (state.lowOnly){
+    cats = cats.map(c => ({...c, itens: c.itens.filter(i => i.atual <= 0)})).filter(c => c.itens.length>0);
+  }
+
+  let html = `
+    <div class="pills">
+      <div class="pill"><div class="pill-label">Entrou hoje</div><div class="pill-value good">${formatQty(computed.todayMovements.entradas)}</div></div>
+      <div class="pill"><div class="pill-label">Saiu hoje</div><div class="pill-value accent">${formatQty(computed.todayMovements.saidas)}</div></div>
+      <div class="pill"><div class="pill-label">Zerados</div><div class="pill-value zero">${zeroCount}</div></div>
+    </div>
+    <div class="search-row">
+      <div class="search-box">
+        <span style="width:14px;display:inline-block;">${ICON_SEARCH}</span>
+        <input id="searchInput" placeholder="Buscar item…" value="${escapeHtml(state.search)}" />
+        ${state.search ? `<button class="clear-btn" id="clearSearch">${ICON_X}</button>` : ''}
+      </div>
+      <button class="filter-btn ${state.lowOnly?'active':''}" id="lowOnlyBtn">Zerados</button>
+    </div>
+  `;
+
+  if (cats.length === 0){
+    html += `<div class="empty-state">${ICON_BOX}<div>Nenhum item encontrado.</div></div>`;
+    return html;
+  }
+
+  html += cats.map(cat => {
+    const isOpen = state.expandedCats[cat.nome] !== false;
+    const catZero = cat.itens.filter(i => i.atual<=0).length;
+    const itemsHtml = isOpen ? cat.itens.map(item => {
+      const isZero = item.atual <= 0;
+      return `
+        <div class="item-row">
+          <div style="min-width:0;flex:1;padding-right:10px;">
+            <div class="item-name" title="${escapeHtml(item.produto)}">${escapeHtml(item.produto)}</div>
+            ${item.semSaldoBase ? `<div class="item-note">sem saldo inicial registrado</div>` : ''}
+          </div>
+          <div class="item-value ${isZero?'zero':'ok'}">${formatQty(item.atual)}${item.unidade ? `<span class="item-unit">${item.unidade}</span>` : ''}</div>
+        </div>`;
+    }).join('') : '';
+
+    return `
+      <div class="cat">
+        <button class="cat-head" data-cat="${escapeHtml(cat.nome)}">
+          <div class="cat-head-left">
+            <span style="display:inline-flex;transform:${isOpen?'none':'none'}">${isOpen ? ICON_CHEVRON_DOWN : ICON_CHEVRON_RIGHT}</span>
+            <span class="cat-name">${escapeHtml(cat.nome)}</span>
+          </div>
+          <div class="cat-head-right">
+            ${catZero>0 ? `<span class="cat-zero-badge">${catZero} zerado${catZero>1?'s':''}</span>` : ''}
+            <span class="cat-count">${cat.itens.length} itens</span>
+          </div>
+        </button>
+        ${itemsHtml}
+      </div>`;
+  }).join('');
+
+  return html;
+}
+
+function renderMovView(computed){
+  if (computed.dayList.length === 0){
+    return `<div class="empty-state">${ICON_BOX}<div>Nenhuma movimentação registrada ainda.</div></div>`;
+  }
+
+  const dayChipsHtml = computed.dayList.map(day => {
+    const d = new Date(day + 'T00:00:00');
+    const active = day === state.selectedDay;
+    return `<button class="day-chip ${active?'active':''}" data-day="${day}">${formatDateBR(d)}</button>`;
+  }).join('');
+
+  let html = `<div class="day-scroll">${dayChipsHtml}</div>`;
+
+  const movs = state.selectedDay ? (computed.movementsByDay[state.selectedDay] || []) : [];
+  const entradas = movs.filter(r=>r.tipo==='ENTRADA').reduce((s,r)=>s+r.quantidade,0);
+  const saidas = movs.filter(r=>r.tipo==='SAÍDA'||r.tipo==='SAIDA').reduce((s,r)=>s+r.quantidade,0);
+
+  html += `
+    <div class="pills">
+      <div class="pill"><div class="pill-label">Entradas</div><div class="pill-value good">${formatQty(entradas)}</div></div>
+      <div class="pill"><div class="pill-label">Saídas</div><div class="pill-value accent">${formatQty(saidas)}</div></div>
+    </div>`;
+
+  const grouped = {};
+  movs.forEach(r => { (grouped[r.categoria] = grouped[r.categoria]||[]).push(r); });
+  const catNames = Object.keys(grouped).sort((a,b)=>a.localeCompare(b,'pt-BR'));
+
+  if (catNames.length === 0){
+    html += `<div class="empty-state">${ICON_BOX}<div>Sem entradas ou saídas nesse dia.</div></div>`;
+    return html;
+  }
+
+  html += catNames.map(cat => {
+    const itens = [...grouped[cat]].sort((a,b)=> (a.timestamp||a.data) - (b.timestamp||b.data));
+    const rowsHtml = itens.map(r => {
+      const isEntrada = r.tipo === 'ENTRADA';
+      const time = r.timestamp ? r.timestamp.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '';
+      return `
+        <div class="mov-row">
+          <span class="${isEntrada?'mov-icon-in':'mov-icon-out'}">${isEntrada?ICON_IN:ICON_OUT}</span>
+          <div style="min-width:0;flex:1;">
+            <div class="item-name">${escapeHtml(r.produto)}</div>
+            <div class="mov-meta">${escapeHtml(r.responsavel)}${time?` · ${time}`:''}</div>
+          </div>
+          <div class="mov-qty ${isEntrada?'in':'out'}">${isEntrada?'+':'−'}${formatQty(r.quantidade)}</div>
+        </div>`;
+    }).join('');
+    return `
+      <div class="cat">
+        <div style="padding:11px 16px;font-weight:700;font-size:12px;color:#6b6b66;border-bottom:1px solid var(--line);">${escapeHtml(cat)}</div>
+        ${rowsHtml}
+      </div>`;
+  }).join('');
+
+  return html;
+}
+
+function attachSaldoHandlers(computed){
+  const searchInput = document.getElementById('searchInput');
+  if (searchInput){
+    searchInput.addEventListener('input', (e) => { state.search = e.target.value; render(); });
+    // restore focus + cursor position after re-render
+    searchInput.focus();
+    const val = searchInput.value; searchInput.value=''; searchInput.value = val;
+  }
+  const clearBtn = document.getElementById('clearSearch');
+  if (clearBtn) clearBtn.addEventListener('click', () => { state.search=''; render(); });
+
+  const lowOnlyBtn = document.getElementById('lowOnlyBtn');
+  if (lowOnlyBtn) lowOnlyBtn.addEventListener('click', () => { state.lowOnly = !state.lowOnly; render(); });
+
+  document.querySelectorAll('.cat-head').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const cat = btn.getAttribute('data-cat');
+      state.expandedCats[cat] = !(state.expandedCats[cat] !== false);
+      render();
+    });
+  });
+}
+
+function attachMovHandlers(computed){
+  document.querySelectorAll('.day-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.selectedDay = btn.getAttribute('data-day');
+      render();
+    });
+  });
+}
+
+document.getElementById('tabSaldo').addEventListener('click', () => { state.tab='saldo'; render(); });
+document.getElementById('tabMov').addEventListener('click', () => { state.tab='movimentacao'; render(); });
+document.getElementById('refreshBtn').addEventListener('click', () => { if(!state.loading) loadData(); });
+
+loadData();
+</script>
+</body>
+</html>
