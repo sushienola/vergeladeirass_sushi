@@ -368,16 +368,7 @@ function computeAll(rows){
   }
   const dayList = Object.keys(movementsByDay).sort((a,b)=> a<b?1:-1);
 
-  const now = new Date();
-  const todayKey = dateKey(now);
-  const todaysRows = movementsByDay[todayKey] || [];
-  let entradas=0, saidas=0;
-  todaysRows.forEach(r => {
-    if (r.tipo==='ENTRADA') entradas += r.quantidade;
-    else if (r.tipo==='SAÍDA'||r.tipo==='SAIDA') saidas += r.quantidade;
-  });
-
-  return { balances, categories, movementsByDay, dayList, todayMovements: { entradas, saidas } };
+  return { balances, categories, movementsByDay, dayList };
 }
 
 // ---------- render ----------
@@ -394,13 +385,17 @@ function render(){
   }
 
   if (state.error){
+    const isLocalFile = location.protocol === 'file:';
+    const msg = isLocalFile
+      ? 'Este arquivo foi aberto direto do computador (file://), e o navegador bloqueia esse tipo de acesso à planilha por segurança. Para funcionar, o arquivo precisa ser aberto por um endereço http(s) — hospede-o em algum lugar (Google Drive com link, GitHub Pages, Netlify, etc.) em vez de dar duplo clique nele.'
+      : escapeHtml(state.error) + '. Confira se a planilha ainda está publicada em Arquivo → Compartilhar → Publicar na web.';
     content.innerHTML = `
       <div class="error-box">
         <div style="display:flex;gap:8px;align-items:flex-start;">
           <div style="flex-shrink:0;color:#c94b3f;width:16px;">${ICON_ALERT}</div>
           <div>
             <div class="error-title">Não consegui carregar a planilha</div>
-            <div class="error-msg">${escapeHtml(state.error)}. Confira se a planilha ainda está publicada em Arquivo → Compartilhar → Publicar na web.</div>
+            <div class="error-msg">${msg}</div>
             <button class="error-retry" onclick="loadData()">Tentar de novo</button>
           </div>
         </div>
@@ -442,11 +437,6 @@ function renderSaldoView(computed){
   }
 
   let html = `
-    <div class="pills">
-      <div class="pill"><div class="pill-label">Entrou hoje</div><div class="pill-value good">${formatQty(computed.todayMovements.entradas)}</div></div>
-      <div class="pill"><div class="pill-label">Saiu hoje</div><div class="pill-value accent">${formatQty(computed.todayMovements.saidas)}</div></div>
-      <div class="pill"><div class="pill-label">Zerados</div><div class="pill-value zero">${zeroCount}</div></div>
-    </div>
     <div class="search-row">
       <div class="search-box">
         <span style="width:14px;display:inline-block;">${ICON_SEARCH}</span>
